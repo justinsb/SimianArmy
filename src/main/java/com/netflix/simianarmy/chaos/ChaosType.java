@@ -16,7 +16,7 @@ public abstract class ChaosType {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChaosType.class);
 
     /**
-     * Configuration for this chaos type
+     * Configuration for this chaos type.
      */
     private final MonkeyConfiguration config;
 
@@ -77,6 +77,13 @@ public abstract class ChaosType {
      * detach.
      */
     public boolean canApply(CloudClient cloudClient, String instanceId) {
+        return isEnabled();
+    }
+
+    /**
+     * Returns whether we are enabled.
+     */
+    public boolean isEnabled() {
         return enabled;
     }
 
