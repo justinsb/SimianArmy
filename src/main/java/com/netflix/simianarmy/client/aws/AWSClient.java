@@ -69,8 +69,6 @@ import com.amazonaws.services.simpledb.AmazonSimpleDB;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.inject.Module;
 import com.netflix.simianarmy.CloudClient;
 import com.netflix.simianarmy.NotFoundException;
@@ -79,10 +77,7 @@ import org.apache.commons.lang.Validate;
 import org.jclouds.ContextBuilder;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
-import org.jclouds.compute.Utils;
-import org.jclouds.compute.domain.NodeMetadata;
-import org.jclouds.logging.log4j.config.Log4JLoggingModule;
-import org.jclouds.ssh.SshClient;
+import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.ssh.jsch.config.JschSshClientModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +88,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -168,7 +162,7 @@ public class AWSClient implements CloudClient {
                 .newBuilder("ec2")
                 .credentials(username, password)
                 .modules(
-                        ImmutableSet.<Module> of(new Log4JLoggingModule(),
+                        ImmutableSet.<Module>of(new SLF4JLoggingModule(),
                                 new JschSshClientModule()))
                 .buildView(ComputeServiceContext.class);
 
@@ -657,8 +651,8 @@ public class AWSClient implements CloudClient {
     }
 
     /**
-     * Describe a set of security groups
-     * 
+     * Describe a set of security groups.
+     *
      * @param groupNames the names of the groups to find
      * @return a list of matching groups
      */
@@ -692,7 +686,7 @@ public class AWSClient implements CloudClient {
 
     /**
      * Create an (empty) EC2 security group.
-     * 
+     *
      * @param name
      *            Name of group to create
      * @param description
@@ -729,25 +723,15 @@ public class AWSClient implements CloudClient {
         return instance;
     }
 
-    public NodeMetadata findJcloudsNode(String instanceId) {
-        List<String> instanceIds = Lists.newArrayList();
-        instanceIds.add(instanceId);
-        Set<? extends NodeMetadata> nodes = jcloudsComputeService.listNodesByIds(instanceIds);
-        if (nodes.isEmpty()) {
-            return null;
-        }
-        return Iterables.getOnlyElement(nodes);
-    }
-
-    @Override
-    public SshClient getJcloudsSsh(NodeMetadata node) {
-        Utils utils = jcloudsComputeService.getContext().getUtils();
-        SshClient ssh = utils.sshForNode().apply(node);
-        return ssh;
-    }
-
+    /** {@inheritDoc} */
     @Override
     public ComputeService getJcloudsComputeService() {
         return jcloudsComputeService;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getJcloudsId(String instanceId) {
+        return this.region + "/" + instanceId;
     }
 }
