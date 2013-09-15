@@ -17,39 +17,21 @@
  */
 package com.netflix.simianarmy.chaos;
 
-import com.netflix.simianarmy.CloudClient;
+import java.io.IOException;
 import com.netflix.simianarmy.MonkeyConfiguration;
 
 /**
- * Shuts down the instance using the cloud instance-termination API.
- *
- * This is the classic chaos-monkey strategy.
+ * Adds entries to /etc/hosts so that EC2 API endpoints are unreachable.
  */
-public class ShutdownInstanceChaosType extends ChaosType {
+public class FailEc2ChaosType extends ScriptChaosType {
     /**
      * Constructor.
      *
      * @param config
      *            Configuration to use
+     * @throws IOException
      */
-    public ShutdownInstanceChaosType(MonkeyConfiguration config) {
-        super(config, "ShutdownInstance");
+    public FailEc2ChaosType(MonkeyConfiguration config) {
+        super(config, "FailEc2");
     }
-
-    /**
-     * Shuts down the instance.
-     */
-    @Override
-    public void apply(CloudClient cloudClient, String instanceId) {
-        cloudClient.terminateInstance(instanceId);
-    }
-
-    /**
-     * We want to default to enabled.
-     */
-    @Override
-    protected boolean getEnabledDefault() {
-        return true;
-    }
-
 }

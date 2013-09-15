@@ -17,39 +17,23 @@
  */
 package com.netflix.simianarmy.chaos;
 
-import com.netflix.simianarmy.CloudClient;
+import java.io.IOException;
 import com.netflix.simianarmy.MonkeyConfiguration;
 
 /**
- * Shuts down the instance using the cloud instance-termination API.
+ * Executes a disk I/O intensive program on the node, reducing I/O capacity.
  *
- * This is the classic chaos-monkey strategy.
+ * This simulates either a noisy neighbor on the box or just a general issue with the disk.
  */
-public class ShutdownInstanceChaosType extends ChaosType {
+public class BurnIoChaosType extends ScriptChaosType {
     /**
      * Constructor.
      *
      * @param config
      *            Configuration to use
+     * @throws IOException
      */
-    public ShutdownInstanceChaosType(MonkeyConfiguration config) {
-        super(config, "ShutdownInstance");
+    public BurnIoChaosType(MonkeyConfiguration config) {
+        super(config, "BurnIO");
     }
-
-    /**
-     * Shuts down the instance.
-     */
-    @Override
-    public void apply(CloudClient cloudClient, String instanceId) {
-        cloudClient.terminateInstance(instanceId);
-    }
-
-    /**
-     * We want to default to enabled.
-     */
-    @Override
-    protected boolean getEnabledDefault() {
-        return true;
-    }
-
 }

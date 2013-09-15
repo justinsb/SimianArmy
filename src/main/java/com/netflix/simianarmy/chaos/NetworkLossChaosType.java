@@ -17,39 +17,21 @@
  */
 package com.netflix.simianarmy.chaos;
 
-import com.netflix.simianarmy.CloudClient;
+import java.io.IOException;
 import com.netflix.simianarmy.MonkeyConfiguration;
 
 /**
- * Shuts down the instance using the cloud instance-termination API.
- *
- * This is the classic chaos-monkey strategy.
+ * Introduces network packet loss using traffic-shaping.
  */
-public class ShutdownInstanceChaosType extends ChaosType {
+public class NetworkLossChaosType extends ScriptChaosType {
     /**
      * Constructor.
      *
      * @param config
      *            Configuration to use
+     * @throws IOException
      */
-    public ShutdownInstanceChaosType(MonkeyConfiguration config) {
-        super(config, "ShutdownInstance");
+    public NetworkLossChaosType(MonkeyConfiguration config) {
+        super(config, "NetworkLoss");
     }
-
-    /**
-     * Shuts down the instance.
-     */
-    @Override
-    public void apply(CloudClient cloudClient, String instanceId) {
-        cloudClient.terminateInstance(instanceId);
-    }
-
-    /**
-     * We want to default to enabled.
-     */
-    @Override
-    protected boolean getEnabledDefault() {
-        return true;
-    }
-
 }
