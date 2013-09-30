@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.netflix.simianarmy.CloudClient;
 import com.netflix.simianarmy.MonkeyConfiguration;
@@ -58,28 +59,30 @@ public class BlockAllNetworkTrafficChaosType extends ChaosType {
      * We can apply the strategy iff the blocked security group is configured.
      */
     @Override
-    public boolean canApply(CloudClient cloudClient, String instanceId) {
-        if (!(cloudClient instanceof AWSClient)) {
+    public boolean canApply(ChaosInstance instance) {
+        if (!(instance.getCloudClient() instanceof AWSClient)) {
             LOGGER.warn("Not an AWSClient, can't use security groups");
             return false;
         }
-        return super.canApply(cloudClient, instanceId);
+        if (getVpcId(instance) == null) {
+            LOGGER.info("Not a VPC instance, can't change security groups");
+            return false;
+        }
+        return super.canApply(instance);
     }
 
     /**
      * Takes the instance off the network.
      */
     @Override
-    public void apply(CloudClient cloudClient, String instanceId) {
-        if (!(cloudClient instanceof AWSClient)) {
+    public void apply(ChaosInstance instance) {
+        String vpcId = getVpcId(instance);
+
+        if (vpcId == null) {
             throw new IllegalStateException("canApply should have returned false");
         }
 
-        AWSClient awsClient = (AWSClient) cloudClient;
-
-        Instance instance = awsClient.describeInstance(instanceId);
-
-        String vpcId = instance.getVpcId();
+        AWSClient awsClient = (AWSClient) instance.getCloudClient();
 
         SecurityGroup found = null;
         List<SecurityGroup> securityGroups = awsClient.describeSecurityGroups(blockedSecurityGroupName);
@@ -102,10 +105,39 @@ public class BlockAllNetworkTrafficChaosType extends ChaosType {
             groupId = found.getGroupId();
         }
 
+        String instanceId = instance.getInstanceId();
         LOGGER.info("Blocking network traffic by applying security group {} to instance {}", groupId, instanceId);
 
         List<String> groups = Lists.newArrayList();
         groups.add(groupId);
         awsClient.setInstanceSecurityGroups(instanceId, groups);
+    }
+
+    /**
+     * Gets the VPC id for the given instance
+     *
+     * @param cloudClient
+     *            cloud client
+     * @param instanceId
+     *            instance id
+     * @return vpc id, or null if not a vpc instance
+     */
+    String getVpcId(ChaosInstance instance) {
+        CloudClient cloudClient = instance.getCloudClient();
+        String instanceId = instance.getInstanceId();
+
+        if (!(cloudClient instanceof AWSClient)) {
+            return null;
+        }
+
+        AWSClient awsClient = (AWSClient) cloudClient;
+        Instance awsInstance = awsClient.describeInstance(instanceId);
+
+        String vpcId = awsInstance.getVpcId();
+        if (Strings.isNullOrEmpty(vpcId)) {
+            return null;
+        }
+
+        return vpcId;
     }
 }
